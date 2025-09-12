@@ -1,0 +1,1098 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Owner Portal</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      animation: slideDown 0.8s ease-out 0.2s both;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h3 {
+      color: #2d3748;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 2rem 0 1rem 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid #667eea;
+      position: relative;
+    }
+
+    h3::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: #764ba2;
+      transition: width 0.3s ease;
+    }
+
+    h3:hover::after {
+      width: 100px;
+    }
+
+    #btnNew {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+      display: block;
+      margin: 0 auto 2rem auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #btnNew::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s;
+    }
+
+    #btnNew:hover::before {
+      left: 100%;
+    }
+
+    #btnNew:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.6);
+    }
+
+    #btnNew:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #newForm {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-row > * {
+      flex: 1;
+    }
+
+    .form-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    form input, form textarea, form select {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.9);
+      font-family: inherit;
+    }
+
+    form input:focus, form textarea:focus, form select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: white;
+      transform: translateY(-1px);
+    }
+
+    form textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Location Section */
+    .location-section {
+      background: rgba(102, 126, 234, 0.05);
+      padding: 1.5rem;
+      border-radius: 15px;
+      border: 2px dashed rgba(102, 126, 234, 0.3);
+      margin-bottom: 1.5rem;
+    }
+
+    .location-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    #map {
+      width: 100%;
+      height: 300px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      margin-top: 1rem;
+    }
+
+    .location-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .location-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .location-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .location-info {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .coordinates {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #4a5568;
+      margin-top: 0.5rem;
+    }
+
+    /* Tags Input Enhancement */
+    .tags-input {
+      position: relative;
+    }
+
+    .tag-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      z-index: 1000;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .tag-suggestion {
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .tag-suggestion:hover {
+      background-color: #f7fafc;
+    }
+
+    .tag-suggestion.selected {
+      background-color: #667eea;
+      color: white;
+    }
+
+    /* Checkbox enhancement */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 1rem;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .checkbox-group:hover {
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      transform: scale(1.3);
+      accent-color: #667eea;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      font-weight: 500;
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    /* File upload enhancement */
+    .file-upload-area {
+      border: 2px dashed #cbd5e0;
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .file-upload-area:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .file-upload-area.dragover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+      transform: scale(1.02);
+    }
+
+    .file-upload-text {
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    form button[type="submit"] {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 1.2rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    form button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    form button[type="submit"]:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .booking-card, .ground-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.6s ease-out;
+    }
+
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .booking-card::before, .ground-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      transition: width 0.3s ease;
+    }
+
+    .booking-card:hover, .ground-card:hover {
+      transform: translateY(-3px) translateX(3px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .booking-card:hover::before, .ground-card:hover::before {
+      width: 6px;
+    }
+
+    .booking-card strong, .ground-card strong {
+      font-size: 1.2rem;
+      color: #2d3748;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+
+    .status.pending {
+      background: rgba(237, 137, 54, 0.2);
+      color: #c05621;
+    }
+
+    .status.available {
+      background: rgba(72, 187, 120, 0.2);
+      color: #2f855a;
+    }
+
+    .status.unavailable {
+      background: rgba(245, 101, 101, 0.2);
+      color: #c53030;
+    }
+
+    .booking-card button, .ground-card button {
+      background: linear-gradient(135deg, #4299e1, #3182ce);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem 0.5rem 0.25rem 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .booking-card button:hover, .ground-card button:hover {
+      transform: translateY(-1px) scale(1.05);
+      box-shadow: 0 5px 15px rgba(66, 153, 225, 0.4);
+    }
+
+    .booking-card .confirm {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+    }
+
+    .booking-card .confirm:hover {
+      box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+    }
+
+    .booking-card .reject {
+      background: linear-gradient(135deg, #f56565, #e53e3e);
+    }
+
+    .booking-card .reject:hover {
+      box-shadow: 0 5px 15px rgba(245, 101, 101, 0.4);
+    }
+
+    .ground-card .make-unavail {
+      background: linear-gradient(135deg, #f6ad55, #ed8936);
+    }
+
+    .ground-card .make-unavail:hover {
+      box-shadow: 0 5px 15px rgba(246, 173, 85, 0.4);
+    }
+
+    .ground-card .make-avail {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+    }
+
+    .ground-card .make-avail:hover {
+      box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+    }
+
+    #bookings, #grounds {
+      animation: containerFadeIn 1s ease-out 0.4s both;
+    }
+
+    @keyframes containerFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading states */
+    .loading {
+      position: relative;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid transparent;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      main {
+        padding: 1rem;
+      }
+
+      h2 {
+        font-size: 2rem;
+      }
+
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .location-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .booking-card, .ground-card {
+        padding: 1rem;
+      }
+
+      #map {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h2><i class="fas fa-crown" style="margin-right: 0.5rem;"></i>Owner Dashboard</h2>
+    <button id="btnNew"><i class="fas fa-plus" style="margin-right: 0.5rem;"></i>Add / Re-list Venue</button>
+    
+    <section id="newForm" class="hidden">
+      <h3><i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: #667eea;"></i>New Venue</h3>
+      <form id="venueForm" enctype="multipart/form-data">
+        
+        <div class="form-group">
+          <label for="title"><i class="fas fa-tag"></i> Venue Title</label>
+          <input id="title" name="title" placeholder="e.g., Green Valley Football Ground" required/>
+        </div>
+
+        <div class="form-group">
+          <label for="description"><i class="fas fa-align-left"></i> Description</label>
+          <textarea id="description" name="description" placeholder="Describe your venue, facilities, and what makes it special..." required></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="amount"><i class="fas fa-rupee-sign"></i> Price Amount</label>
+            <input id="amount" name="amount" type="number" placeholder="e.g., 2000" required/>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="negotiable" name="negotiable" value="true"/>
+              <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable Price</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group tags-input">
+            <label for="tags_sport"><i class="fas fa-futbol"></i> Sports Offered</label>
+            <input id="tags_sport" name="tags_sport" placeholder="Start typing sports..." />
+            <div class="tag-suggestions" id="sportSuggestions"></div>
+          </div>
+          <div class="form-group tags-input">
+            <label for="tags_facilities"><i class="fas fa-cogs"></i> Facilities Available</label>
+            <input id="tags_facilities" name="tags_facilities" placeholder="Start typing facilities..." />
+            <div class="tag-suggestions" id="facilitySuggestions"></div>
+          </div>
+        </div>
+
+        <div class="location-section">
+          <div class="location-header">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Venue Location</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="address"><i class="fas fa-home"></i> Full Address</label>
+            <input id="address" name="address" placeholder="Enter complete address..." required/>
+          </div>
+
+          <div class="location-buttons">
+            <button type="button" class="location-btn" id="currentLocationBtn">
+              <i class="fas fa-crosshairs"></i>
+              Use Current Location
+            </button>
+            <button type="button" class="location-btn" id="searchAddressBtn">
+              <i class="fas fa-search"></i>
+              Search Address on Map
+            </button>
+          </div>
+
+          <div id="map"></div>
+          
+          <div class="location-info" id="locationInfo" style="display: none;">
+            <div><strong>Selected Location:</strong> <span id="selectedAddress"></span></div>
+            <div class="coordinates">
+              Coordinates: <span id="selectedCoords"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="thumbnail"><i class="fas fa-image"></i> Thumbnail Image</label>
+            <div class="file-upload-area" onclick="document.getElementById('thumbnail').click()">
+              <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
+              <div class="file-upload-text">Click to upload thumbnail</div>
+              <input type="file" id="thumbnail" name="thumbnail" accept="image/*" style="display: none;" required/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="images"><i class="fas fa-images"></i> Additional Images</label>
+            <div class="file-upload-area" onclick="document.getElementById('images').click()">
+              <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
+              <div class="file-upload-text">Click to upload multiple images</div>
+              <input type="file" id="images" name="images" accept="image/*" multiple style="display: none;"/>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" name="lat" id="lat"/>
+        <input type="hidden" name="lng" id="lng"/>
+
+        <button type="submit"><i class="fas fa-check" style="margin-right: 0.5rem;"></i>Create Venue</button>
+      </form>
+    </section>
+
+    <h3><i class="fas fa-calendar-check" style="margin-right: 0.5rem; color: #667eea;"></i>Booking Requests</h3>
+    <div id="bookings"></div>
+
+    <h3><i class="fas fa-building" style="margin-right: 0.5rem; color: #667eea;"></i>My Grounds</h3>
+    <div id="grounds"></div>
+  </main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const token = localStorage.getItem('token');
+  if(!token) { alert('Please login as owner'); location.href = '/login.html'; }
+  
+  // Map variables
+  let map;
+  let marker;
+
+  document.getElementById('btnNew').addEventListener('click', ()=> {
+    const newForm = document.getElementById('newForm');
+    newForm.classList.toggle('hidden');
+    // Initialize map when form is shown
+    if (!newForm.classList.contains('hidden') && !map) {
+      initializeMap();
+    }
+  });
+
+  function initializeMap() {
+    const defaultLocation = [21.1702, 72.8311]; // Surat coordinates
+    
+    map = L.map('map').setView(defaultLocation, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    marker = L.marker(defaultLocation, {
+      draggable: true
+    }).addTo(map);
+    
+    // Initial update
+    updateLocationInfo(defaultLocation[0], defaultLocation[1]);
+    reverseGeocode(defaultLocation[0], defaultLocation[1]);
+
+    // Marker drag event
+    marker.on('dragend', function(e) {
+      const position = marker.getLatLng();
+      updateLocationInfo(position.lat, position.lng);
+      reverseGeocode(position.lat, position.lng);
+    });
+
+    // Map click event
+    map.on('click', function(e) {
+      const latlng = e.latlng;
+      marker.setLatLng(latlng);
+      updateLocationInfo(latlng.lat, latlng.lng);
+      reverseGeocode(latlng.lat, latlng.lng);
+    });
+  }
+
+  function updateLocationInfo(lat, lng) {
+    document.getElementById('lat').value = lat;
+    document.getElementById('lng').value = lng;
+    document.getElementById('selectedCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    document.getElementById('locationInfo').style.display = 'block';
+  }
+
+  async function reverseGeocode(lat, lng) {
+    const addressSpan = document.getElementById('selectedAddress');
+    const addressInput = document.getElementById('address');
+    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+    
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data && data.display_name) {
+        addressSpan.textContent = data.display_name;
+        if (!addressInput.value) {
+          addressInput.value = data.display_name;
+        }
+      } else {
+        addressSpan.textContent = 'Address not found';
+      }
+    } catch (e) {
+      console.error('Geocoding error:', e);
+      addressSpan.textContent = 'Error fetching address';
+    }
+  }
+
+  // Current location button
+  document.getElementById('currentLocationBtn').addEventListener('click', function() {
+    if (navigator.geolocation) {
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
+      navigator.geolocation.getCurrentPosition((position) => {
+        const latlng = [position.coords.latitude, position.coords.longitude];
+        
+        map.setView(latlng, 15);
+        marker.setLatLng(latlng);
+        updateLocationInfo(latlng[0], latlng[1]);
+        reverseGeocode(latlng[0], latlng[1]);
+        
+        this.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
+      }, (error) => {
+        alert('Unable to get current location. Please try manually selecting on map.');
+        this.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
+      });
+    } else {
+      alert('Geolocation is not supported by this browser.');
+    }
+  });
+
+  // Search address button (using Nominatim geocoding)
+  document.getElementById('searchAddressBtn').addEventListener('click', async function() {
+    const address = document.getElementById('address').value;
+    if (!address) {
+      alert('Please enter an address first');
+      return;
+    }
+
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const latlng = [data[0].lat, data[0].lon];
+        map.setView(latlng, 15);
+        marker.setLatLng(latlng);
+        updateLocationInfo(latlng[0], latlng[1]);
+        document.getElementById('selectedAddress').textContent = data[0].display_name;
+      } else {
+        alert('Address not found. Please try a different address.');
+      }
+    } catch (e) {
+      console.error('Geocoding error:', e);
+      alert('Address search failed. Please try again.');
+    } finally {
+      this.innerHTML = '<i class="fas fa-search"></i> Search Address on Map';
+    }
+  });
+
+  // Tag suggestions functionality
+  function setupTagSuggestions(inputId, suggestionsId, suggestions) {
+    const input = document.getElementById(inputId);
+    const suggestionsDiv = document.getElementById(suggestionsId);
+
+    input.addEventListener('input', function() {
+      const value = this.value.toLowerCase();
+      const currentTags = this.value.split(',').map(tag => tag.trim());
+      const lastTag = currentTags[currentTags.length - 1].toLowerCase();
+
+      if (lastTag.length > 0) {
+        const matches = suggestions.filter(suggestion => 
+          suggestion.toLowerCase().includes(lastTag) && 
+          !currentTags.slice(0, -1).some(tag => tag.toLowerCase() === suggestion.toLowerCase())
+        );
+
+        if (matches.length > 0) {
+          suggestionsDiv.innerHTML = matches.map(match => 
+            `<div class="tag-suggestion">${match}</div>`
+          ).join('');
+          suggestionsDiv.style.display = 'block';
+
+          // Add click handlers
+          suggestionsDiv.querySelectorAll('.tag-suggestion').forEach(suggestion => {
+            suggestion.addEventListener('click', function() {
+              const newTags = [...currentTags.slice(0, -1), this.textContent];
+              input.value = newTags.join(', ');
+              suggestionsDiv.style.display = 'none';
+            });
+          });
+        } else {
+          suggestionsDiv.style.display = 'none';
+        }
+      } else {
+        suggestionsDiv.style.display = 'none';
+      }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!input.contains(event.target) && !suggestionsDiv.contains(event.target)) {
+        suggestionsDiv.style.display = 'none';
+      }
+    });
+  }
+
+  // Suggestions data
+  const sportSuggestions = ['Football', 'Cricket', 'Tennis', 'Basketball', 'Volleyball', 'Badminton', 'Table Tennis', 'Hockey', 'Rugby', 'Baseball'];
+  const facilitySuggestions = ['Parking', 'Washroom', 'Lighting', 'Changing Room', 'Cafeteria', 'First Aid', 'Security', 'Sound System', 'Scoreboard', 'Seating'];
+
+  // Initialize tag suggestions
+  setupTagSuggestions('tags_sport', 'sportSuggestions', sportSuggestions);
+  setupTagSuggestions('tags_facilities', 'facilitySuggestions', facilitySuggestions);
+
+  // File upload enhancements
+  function setupFileUpload(inputId) {
+    const input = document.getElementById(inputId);
+    const area = input.closest('.form-group').querySelector('.file-upload-area');
+    
+    // Drag and drop functionality
+    area.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+
+    area.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+    });
+
+    area.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      input.files = files;
+      updateFileDisplay(input, area);
+    });
+
+    input.addEventListener('change', function() {
+      updateFileDisplay(this, area);
+    });
+  }
+
+  function updateFileDisplay(input, area) {
+    const files = input.files;
+    const textDiv = area.querySelector('.file-upload-text');
+    
+    if (files.length > 0) {
+      if (files.length === 1) {
+        textDiv.textContent = `Selected: ${files[0].name}`;
+      } else {
+        textDiv.textContent = `Selected: ${files.length} files`;
+      }
+      area.style.borderColor = '#48bb78';
+      area.style.backgroundColor = 'rgba(72, 187, 120, 0.05)';
+    }
+  }
+
+  setupFileUpload('thumbnail');
+  setupFileUpload('images');
+
+  async function apiGet(url){ 
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token}});
+    return await r.json(); 
+  }
+
+  async function refreshBookings(){
+    const bookingsDiv = document.getElementById('bookings');
+    bookingsDiv.classList.add('loading');
+    
+    const list = await apiGet('/api/bookings/owner');
+    const div = document.getElementById('bookings');
+    div.innerHTML = '';
+    div.classList.remove('loading');
+    
+    (list || []).forEach(b => {
+      const el = document.createElement('div');
+      el.className = "booking-card";
+      el.dataset.id = b._id;
+
+      // Determine status class
+      const statusClass = b.status.toLowerCase().replace(' ', '-');
+
+      el.innerHTML = `
+        <strong><i class="fas fa-futbol" style="margin-right: 0.5rem; color: #667eea;"></i>${b.ground.title}</strong>
+        <div style="margin: 0.5rem 0;">
+          <i class="fas fa-user" style="margin-right: 0.5rem; color: #4a5568;"></i>${b.user.name} — 
+          <i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${b.amount} 
+          <span class="status ${statusClass}">${b.status}</span>
+        </div>
+        <div style="margin: 0.5rem 0; color: #4a5568;">
+          <i class="fas fa-clock" style="margin-right: 0.5rem;"></i>
+          ${b.timeslot.from || '-'} to ${b.timeslot.to || '-'}
+        </div>
+        <div style="margin-top: 1rem;">
+          <button data-id="${b._id}" class="confirm">
+            <i class="fas fa-check" style="margin-right: 0.25rem;"></i>Confirm
+          </button>
+          <button data-id="${b._id}" class="reject">
+            <i class="fas fa-times" style="margin-right: 0.25rem;"></i>Reject
+          </button>
+        </div>
+      `;
+      div.appendChild(el);
+    });
+
+    // Confirm handler → remove card after success
+    document.querySelectorAll('.confirm').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const id = ev.target.getAttribute('data-id');
+      const card = ev.target.closest('.booking-card');
+      card.classList.add('loading');
+      await fetch('/api/bookings/' + id + '/confirm', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }});
+      alert('Confirmed');
+      card.remove(); // remove accepted booking
+    }));
+
+    // Reject handler → just update status, keep card
+    document.querySelectorAll('.reject').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const id = ev.target.getAttribute('data-id');
+      const card = ev.target.closest('.booking-card');
+      card.classList.add('loading');
+      await fetch('/api/bookings/' + id + '/reject', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }});
+      alert('Rejected');
+      card.remove();
+    }));
+  }
+
+  document.getElementById('venueForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Validation
+    const lat = document.getElementById('lat').value;
+    const lng = document.getElementById('lng').value;
+    
+    if (!lat || !lng) {
+      alert('Please select a location on the map');
+      return;
+    }
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Creating Venue...';
+    submitBtn.disabled = true;
+    
+    const fd = new FormData(form);
+    const r = await fetch('/api/grounds', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    const j = await r.json();
+    
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+    
+    if(j._id) {
+      alert('Venue created successfully!'); 
+      form.reset();
+      document.getElementById('newForm').classList.add('hidden');
+      // Reset location info
+      document.getElementById('locationInfo').style.display = 'none';
+      // Reset file upload displays
+      document.querySelectorAll('.file-upload-text').forEach(text => {
+        if (text.closest('.form-group').querySelector('input').id === 'thumbnail') {
+          text.textContent = 'Click to upload thumbnail';
+        } else {
+          text.textContent = 'Click to upload multiple images';
+        }
+      });
+      document.querySelectorAll('.file-upload-area').forEach(area => {
+        area.style.borderColor = '#cbd5e0';
+        area.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+      });
+    } else {
+      alert('Error creating venue. Please try again.');
+    }
+    refreshBookings();
+    refreshGrounds();
+  });
+
+  async function refreshGrounds() {
+    const groundsDiv = document.getElementById('grounds');
+    groundsDiv.classList.add('loading');
+    
+    const list = await apiGet('/api/grounds/owner');
+    const div = document.getElementById('grounds');
+    div.innerHTML = '';
+    div.classList.remove('loading');
+
+    (list || []).forEach(g => {
+      const el = document.createElement('div');
+      el.className = "ground-card";
+      el.dataset.id = g._id;
+
+      // Determine status class
+      const statusClass = g.available ? 'available' : 'unavailable';
+
+      el.innerHTML = `
+        <strong><i class="fas fa-map-marked-alt" style="margin-right: 0.5rem; color: #667eea;"></i>${g.title}</strong>
+        <div style="margin: 0.5rem 0;">
+          <i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${g.price?.amount || 0}
+          <span class="status ${statusClass}">${g.available ? 'Available' : 'Unavailable'}</span>
+        </div>
+        <div style="margin-top: 1rem;">
+          ${g.available 
+            ? `<button data-id="${g._id}" class="make-unavail">
+                <i class="fas fa-eye-slash" style="margin-right: 0.25rem;"></i>Mark Unavailable
+               </button>` 
+            : `<button data-id="${g._id}" class="make-avail">
+                <i class="fas fa-redo" style="margin-right: 0.25rem;"></i>Re-list
+               </button>`
+          }
+        </div>
+      `;
+      div.appendChild(el);
+    });
+
+    // Mark unavailable
+    document.querySelectorAll('.make-unavail').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const id = ev.target.getAttribute('data-id');
+      const card = ev.target.closest('.ground-card');
+      card.classList.add('loading');
+      
+      await fetch('/api/grounds/' + id, {
+        method:'PATCH',
+        headers: { 'Content-Type':'application/json','Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ available: false })
+      });
+      refreshGrounds();
+    }));
+
+    // Re-list (make available again)
+    document.querySelectorAll('.make-avail').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const id = ev.target.getAttribute('data-id');
+      const card = ev.target.closest('.ground-card');
+      card.classList.add('loading');
+      
+      await fetch('/api/grounds/' + id, {
+        method:'PATCH',
+        headers: { 'Content-Type':'application/json','Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ available: true })
+      });
+      refreshGrounds();
+    }));
+  }
+
+  refreshBookings();
+  refreshGrounds();
+
+</script>
+
+</body>
+</html>
