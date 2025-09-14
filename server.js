@@ -44,11 +44,6 @@ const upload = multer({ storage });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'replace_with_secure_random_string';
 
-// connect to mongodb
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(()=> console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
 // helper middleware: verify token and set req.user
 const authMiddleware = async (req, res, next) => {
   const auth = req.headers.authorization;
@@ -120,8 +115,20 @@ app.get('/api/grounds/:id', async (req, res) => {
 app.post('/api/grounds', authMiddleware, upload.fields([{name:'thumbnail', maxCount:1}, {name:'images', maxCount:10}]), async (req, res) => {
   if (!req.user || req.user.role !== 'owner') return res.status(403).json({ message: 'Not owner' });
   const body = req.body;
-  const thumbnail = (req.files['thumbnail'] && req.files['thumbnail'][0]) ? '/uploads/' + req.files['thumbnail'][0].filename : body.thumbnail;
-  const images = (req.files['images'] || []).map(f => '/uploads/' + f.filename).concat(body.images ? (Array.isArray(body.images) ? body.images : [body.images]) : []);
+
+  let thumbnail;
+  if (req.files['thumbnail'] && req.files['thumbnail'][0]) {
+    thumbnail = '/uploads/' + req.files['thumbnail'][0].filename;
+  } else if (body.thumbnailUrl) {
+    thumbnail = body.thumbnailUrl;
+  }
+
+  const uploadedImages = (req.files['images'] || []).map(f => '/uploads/' + f.filename);
+  const urlImages = body.imageUrls 
+    ? body.imageUrls.split(/[\n,]+/).map(url => url.trim()).filter(Boolean) 
+    : [];
+  const images = [...uploadedImages, ...urlImages];
+
   const ground = new Ground({
     title: body.title,
     description: body.description,
@@ -155,6 +162,39 @@ app.patch('/api/grounds/:id', authMiddleware, async (req, res) => {
   res.json(g);
 });
 
+// --- NEW: Owner DELETES a ground ---
+app.delete('/api/grounds/:id', authMiddleware, async (req, res) => {
+  if (!req.user || req.user.role !== 'owner') {
+    return res.status(403).json({ message: 'Forbidden: Only owners can delete grounds.' });
+  }
+
+  try {
+    const groundId = req.params.id;
+    const ground = await Ground.findById(groundId);
+
+    if (!ground) {
+      return res.status(404).json({ message: 'Ground not found.' });
+    }
+
+    // Verify ownership
+    if (ground.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not own this ground.' });
+    }
+
+    // Best practice: Delete associated bookings to keep DB clean
+    await Booking.deleteMany({ ground: groundId });
+
+    // Delete the ground itself
+    await Ground.findByIdAndDelete(groundId);
+
+    res.json({ message: 'Ground and associated bookings deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting ground:', error);
+    res.status(500).json({ message: 'Server error while deleting ground.' });
+  }
+});
+
+
 // --- Book a ground (user) ---
 app.post('/api/bookings', authMiddleware, upload.single('paymentScreenshot'), async (req, res) => {
   if (!req.user) return res.status(401).json({ message: 'Not authenticated' });
@@ -176,7 +216,6 @@ app.post('/api/bookings', authMiddleware, upload.single('paymentScreenshot'), as
 });
 
 // owner: list booking requests for his grounds
-// server.js
 app.get('/api/bookings/owner', authMiddleware, async (req, res) => {
   if (!req.user || req.user.role !== 'owner') return res.status(403).json({ message: 'Not owner' });
   const bookings = await Booking.find({
@@ -203,7 +242,6 @@ app.post('/api/bookings/:id/confirm', authMiddleware, async (req, res) => {
 });
 
 // owner rejects booking
-// owner rejects booking
 app.post('/api/bookings/:id/reject', authMiddleware, async (req, res) => {
   if (!req.user || req.user.role !== 'owner') return res.status(403).json({ message: 'Not owner' });
   const booking = await Booking.findById(req.params.id).populate('ground');
@@ -220,8 +258,6 @@ app.post('/api/bookings/:id/reject', authMiddleware, async (req, res) => {
   res.json({ message: 'Booking rejected' });
 });
 
-
-
 // user: view history
 app.get('/api/bookings', authMiddleware, async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id }).populate('ground owner');
@@ -229,11 +265,9 @@ app.get('/api/bookings', authMiddleware, async (req, res) => {
 });
 
 // --- UPI QR generator (returns dataURL) ---
-// expects body: { upiId, name, amount, note }
 app.post('/api/upi-qrcode', async (req, res) => {
   const { upiId, name, amount, note } = req.body;
   if (!upiId || !amount) return res.status(400).json({ message: 'upiId and amount required' });
-  // UPI deep link spec
   const upiStr = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name || '')}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note || '')}`;
   try {
     const dataUrl = await QRCode.toDataURL(upiStr);

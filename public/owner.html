@@ -114,7 +114,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     #newForm {
@@ -157,6 +157,23 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    
+    .upload-choice {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .upload-choice label {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      cursor: pointer;
+    }
 
     form input, form textarea, form select {
       width: 100%;
@@ -182,7 +199,6 @@
       resize: vertical;
     }
 
-    /* Location Section */
     .location-section {
       background: rgba(102, 126, 234, 0.05);
       padding: 1.5rem;
@@ -249,7 +265,6 @@
       margin-top: 0.5rem;
     }
 
-    /* Tags Input Enhancement */
     .tags-input {
       position: relative;
     }
@@ -285,7 +300,6 @@
       color: white;
     }
 
-    /* Checkbox enhancement */
     .checkbox-group {
       display: flex;
       align-items: center;
@@ -317,7 +331,6 @@
       letter-spacing: normal;
     }
 
-    /* File upload enhancement */
     .file-upload-area {
       border: 2px dashed #cbd5e0;
       border-radius: 10px;
@@ -493,6 +506,15 @@
     .ground-card .make-avail:hover {
       box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
     }
+    
+    .ground-card .delete-btn {
+      background: linear-gradient(135deg, #f56565, #e53e3e);
+    }
+
+    .ground-card .delete-btn:hover {
+      box-shadow: 0 5px 15px rgba(245, 101, 101, 0.4);
+    }
+
 
     #bookings, #grounds {
       animation: containerFadeIn 1s ease-out 0.4s both;
@@ -566,7 +588,7 @@
     
     <section id="newForm" class="hidden">
       <h3><i class="fas fa-map-marker-alt" style="margin-right: 0.5rem; color: #667eea;"></i>New Venue</h3>
-      <form id="venueForm" enctype="multipart/form-data">
+      <form id="venueForm">
         
         <div class="form-group">
           <label for="title"><i class="fas fa-tag"></i> Venue Title</label>
@@ -638,19 +660,37 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="thumbnail"><i class="fas fa-image"></i> Thumbnail Image</label>
-            <div class="file-upload-area" onclick="document.getElementById('thumbnail').click()">
-              <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
-              <div class="file-upload-text">Click to upload thumbnail</div>
-              <input type="file" id="thumbnail" name="thumbnail" accept="image/*" style="display: none;" required/>
+            <label><i class="fas fa-image"></i> Thumbnail Image</label>
+            <div class="upload-choice">
+              <label><input type="radio" name="thumbnailChoice" value="upload" checked> Upload File</label>
+              <label><input type="radio" name="thumbnailChoice" value="url"> Use URL</label>
+            </div>
+            <div id="thumbnailUploadArea">
+              <div class="file-upload-area" onclick="document.getElementById('thumbnail').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
+                <div class="file-upload-text">Click to upload thumbnail</div>
+                <input type="file" id="thumbnail" name="thumbnail" accept="image/*" style="display: none;"/>
+              </div>
+            </div>
+            <div id="thumbnailUrlArea" class="hidden">
+              <input type="text" id="thumbnailUrl" placeholder="https://example.com/image.jpg" />
             </div>
           </div>
           <div class="form-group">
-            <label for="images"><i class="fas fa-images"></i> Additional Images</label>
-            <div class="file-upload-area" onclick="document.getElementById('images').click()">
-              <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
-              <div class="file-upload-text">Click to upload multiple images</div>
-              <input type="file" id="images" name="images" accept="image/*" multiple style="display: none;"/>
+            <label><i class="fas fa-images"></i> Additional Images</label>
+            <div class="upload-choice">
+              <label><input type="radio" name="imagesChoice" value="upload" checked> Upload Files</label>
+              <label><input type="radio" name="imagesChoice" value="url"> Use URLs</label>
+            </div>
+            <div id="imagesUploadArea">
+              <div class="file-upload-area" onclick="document.getElementById('images').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 0.5rem;"></i>
+                <div class="file-upload-text">Click to upload multiple images</div>
+                <input type="file" id="images" name="images" accept="image/*" multiple style="display: none;"/>
+              </div>
+            </div>
+            <div id="imagesUrlArea" class="hidden">
+              <textarea id="imageUrls" placeholder="Paste image URLs here, one per line."></textarea>
             </div>
           </div>
         </div>
@@ -681,7 +721,6 @@
   document.getElementById('btnNew').addEventListener('click', ()=> {
     const newForm = document.getElementById('newForm');
     newForm.classList.toggle('hidden');
-    // Initialize map when form is shown
     if (!newForm.classList.contains('hidden') && !map) {
       initializeMap();
     }
@@ -701,18 +740,15 @@
       draggable: true
     }).addTo(map);
     
-    // Initial update
     updateLocationInfo(defaultLocation[0], defaultLocation[1]);
     reverseGeocode(defaultLocation[0], defaultLocation[1]);
 
-    // Marker drag event
     marker.on('dragend', function(e) {
       const position = marker.getLatLng();
       updateLocationInfo(position.lat, position.lng);
       reverseGeocode(position.lat, position.lng);
     });
 
-    // Map click event
     map.on('click', function(e) {
       const latlng = e.latlng;
       marker.setLatLng(latlng);
@@ -751,7 +787,6 @@
     }
   }
 
-  // Current location button
   document.getElementById('currentLocationBtn').addEventListener('click', function() {
     if (navigator.geolocation) {
       this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
@@ -773,7 +808,6 @@
     }
   });
 
-  // Search address button (using Nominatim geocoding)
   document.getElementById('searchAddressBtn').addEventListener('click', async function() {
     const address = document.getElementById('address').value;
     if (!address) {
@@ -806,7 +840,6 @@
     }
   });
 
-  // Tag suggestions functionality
   function setupTagSuggestions(inputId, suggestionsId, suggestions) {
     const input = document.getElementById(inputId);
     const suggestionsDiv = document.getElementById(suggestionsId);
@@ -828,7 +861,6 @@
           ).join('');
           suggestionsDiv.style.display = 'block';
 
-          // Add click handlers
           suggestionsDiv.querySelectorAll('.tag-suggestion').forEach(suggestion => {
             suggestion.addEventListener('click', function() {
               const newTags = [...currentTags.slice(0, -1), this.textContent];
@@ -844,7 +876,6 @@
       }
     });
 
-    // Hide suggestions when clicking outside
     document.addEventListener('click', function(event) {
       if (!input.contains(event.target) && !suggestionsDiv.contains(event.target)) {
         suggestionsDiv.style.display = 'none';
@@ -852,20 +883,34 @@
     });
   }
 
-  // Suggestions data
   const sportSuggestions = ['Football', 'Cricket', 'Tennis', 'Basketball', 'Volleyball', 'Badminton', 'Table Tennis', 'Hockey', 'Rugby', 'Baseball'];
   const facilitySuggestions = ['Parking', 'Washroom', 'Lighting', 'Changing Room', 'Cafeteria', 'First Aid', 'Security', 'Sound System', 'Scoreboard', 'Seating'];
 
-  // Initialize tag suggestions
   setupTagSuggestions('tags_sport', 'sportSuggestions', sportSuggestions);
   setupTagSuggestions('tags_facilities', 'facilitySuggestions', facilitySuggestions);
+  
+  function setupUploadChoice(radioName, uploadAreaId, urlAreaId) {
+    document.querySelectorAll(`input[name="${radioName}"]`).forEach(radio => {
+        radio.addEventListener('change', function() {
+            const uploadArea = document.getElementById(uploadAreaId);
+            const urlArea = document.getElementById(urlAreaId);
+            if (this.value === 'upload') {
+                uploadArea.classList.remove('hidden');
+                urlArea.classList.add('hidden');
+            } else {
+                uploadArea.classList.add('hidden');
+                urlArea.classList.remove('hidden');
+            }
+        });
+    });
+  }
+  setupUploadChoice('thumbnailChoice', 'thumbnailUploadArea', 'thumbnailUrlArea');
+  setupUploadChoice('imagesChoice', 'imagesUploadArea', 'imagesUrlArea');
 
-  // File upload enhancements
   function setupFileUpload(inputId) {
     const input = document.getElementById(inputId);
     const area = input.closest('.form-group').querySelector('.file-upload-area');
     
-    // Drag and drop functionality
     area.addEventListener('dragover', function(e) {
       e.preventDefault();
       this.classList.add('dragover');
@@ -925,10 +970,7 @@
       const el = document.createElement('div');
       el.className = "booking-card";
       el.dataset.id = b._id;
-
-      // Determine status class
       const statusClass = b.status.toLowerCase().replace(' ', '-');
-
       el.innerHTML = `
         <strong><i class="fas fa-futbol" style="margin-right: 0.5rem; color: #667eea;"></i>${b.ground.title}</strong>
         <div style="margin: 0.5rem 0;">
@@ -952,17 +994,15 @@
       div.appendChild(el);
     });
 
-    // Confirm handler → remove card after success
     document.querySelectorAll('.confirm').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.booking-card');
       card.classList.add('loading');
       await fetch('/api/bookings/' + id + '/confirm', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }});
       alert('Confirmed');
-      card.remove(); // remove accepted booking
+      card.remove();
     }));
 
-    // Reject handler → just update status, keep card
     document.querySelectorAll('.reject').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.booking-card');
@@ -979,7 +1019,6 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     
-    // Validation
     const lat = document.getElementById('lat').value;
     const lng = document.getElementById('lng').value;
     
@@ -992,6 +1031,19 @@
     submitBtn.disabled = true;
     
     const fd = new FormData(form);
+
+    const thumbnailChoice = document.querySelector('input[name="thumbnailChoice"]:checked').value;
+    if (thumbnailChoice === 'url') {
+      fd.delete('thumbnail');
+      fd.append('thumbnailUrl', document.getElementById('thumbnailUrl').value);
+    }
+
+    const imagesChoice = document.querySelector('input[name="imagesChoice"]:checked').value;
+    if (imagesChoice === 'url') {
+      fd.delete('images');
+      fd.append('imageUrls', document.getElementById('imageUrls').value);
+    }
+    
     const r = await fetch('/api/grounds', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
     const j = await r.json();
     
@@ -1002,11 +1054,10 @@
       alert('Venue created successfully!'); 
       form.reset();
       document.getElementById('newForm').classList.add('hidden');
-      // Reset location info
       document.getElementById('locationInfo').style.display = 'none';
-      // Reset file upload displays
       document.querySelectorAll('.file-upload-text').forEach(text => {
-        if (text.closest('.form-group').querySelector('input').id === 'thumbnail') {
+        const inputId = text.closest('.file-upload-area').querySelector('input').id;
+        if (inputId === 'thumbnail') {
           text.textContent = 'Click to upload thumbnail';
         } else {
           text.textContent = 'Click to upload multiple images';
@@ -1037,7 +1088,6 @@
       el.className = "ground-card";
       el.dataset.id = g._id;
 
-      // Determine status class
       const statusClass = g.available ? 'available' : 'unavailable';
 
       el.innerHTML = `
@@ -1055,12 +1105,14 @@
                 <i class="fas fa-redo" style="margin-right: 0.25rem;"></i>Re-list
                </button>`
           }
+          <button data-id="${g._id}" class="delete-btn">
+            <i class="fas fa-trash-alt" style="margin-right: 0.25rem;"></i>Delete
+          </button>
         </div>
       `;
       div.appendChild(el);
     });
 
-    // Mark unavailable
     document.querySelectorAll('.make-unavail').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.ground-card');
@@ -1074,7 +1126,6 @@
       refreshGrounds();
     }));
 
-    // Re-list (make available again)
     document.querySelectorAll('.make-avail').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.ground-card');
@@ -1086,6 +1137,33 @@
         body: JSON.stringify({ available: true })
       });
       refreshGrounds();
+    }));
+    
+    // NEW: Add event listeners for delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', async (ev) => {
+      const id = ev.target.closest('button').dataset.id;
+      const card = ev.target.closest('.ground-card');
+      
+      if (confirm('Are you sure you want to permanently delete this ground? This will also remove all associated bookings. This action cannot be undone.')) {
+        card.classList.add('loading');
+        
+        const response = await fetch('/api/grounds/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        card.classList.remove('loading');
+
+        if (response.ok) {
+          alert('Ground deleted successfully.');
+          card.style.transition = 'opacity 0.5s ease';
+          card.style.opacity = '0';
+          setTimeout(() => card.remove(), 500); // Remove element after fade out
+        } else {
+          const error = await response.json();
+          alert('Failed to delete ground: ' + (error.message || 'Server error'));
+        }
+      }
     }));
   }
 
