@@ -14,7 +14,12 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* MODIFIED: Changed background from gradient to image */
+      background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('volleyball.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
       min-height: 100vh;
       color: #333;
       line-height: 1.6;
@@ -714,7 +719,6 @@
   const token = localStorage.getItem('token');
   if(!token) { alert('Please login as owner'); location.href = '/login.html'; }
   
-  // Map variables
   let map;
   let marker;
 
@@ -728,27 +732,19 @@
 
   function initializeMap() {
     const defaultLocation = [21.1702, 72.8311]; // Surat coordinates
-    
     map = L.map('map').setView(defaultLocation, 13);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-
-    marker = L.marker(defaultLocation, {
-      draggable: true
-    }).addTo(map);
-    
+    marker = L.marker(defaultLocation, { draggable: true }).addTo(map);
     updateLocationInfo(defaultLocation[0], defaultLocation[1]);
     reverseGeocode(defaultLocation[0], defaultLocation[1]);
-
     marker.on('dragend', function(e) {
       const position = marker.getLatLng();
       updateLocationInfo(position.lat, position.lng);
       reverseGeocode(position.lat, position.lng);
     });
-
     map.on('click', function(e) {
       const latlng = e.latlng;
       marker.setLatLng(latlng);
@@ -767,9 +763,7 @@
   async function reverseGeocode(lat, lng) {
     const addressSpan = document.getElementById('selectedAddress');
     const addressInput = document.getElementById('address');
-    
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
-    
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -792,12 +786,10 @@
       this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
       navigator.geolocation.getCurrentPosition((position) => {
         const latlng = [position.coords.latitude, position.coords.longitude];
-        
         map.setView(latlng, 15);
         marker.setLatLng(latlng);
         updateLocationInfo(latlng[0], latlng[1]);
         reverseGeocode(latlng[0], latlng[1]);
-        
         this.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
       }, (error) => {
         alert('Unable to get current location. Please try manually selecting on map.');
@@ -814,15 +806,11 @@
       alert('Please enter an address first');
       return;
     }
-
     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
-    
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-    
     try {
       const response = await fetch(url);
       const data = await response.json();
-      
       if (data && data.length > 0) {
         const latlng = [data[0].lat, data[0].lon];
         map.setView(latlng, 15);
@@ -843,24 +831,20 @@
   function setupTagSuggestions(inputId, suggestionsId, suggestions) {
     const input = document.getElementById(inputId);
     const suggestionsDiv = document.getElementById(suggestionsId);
-
     input.addEventListener('input', function() {
       const value = this.value.toLowerCase();
       const currentTags = this.value.split(',').map(tag => tag.trim());
       const lastTag = currentTags[currentTags.length - 1].toLowerCase();
-
       if (lastTag.length > 0) {
         const matches = suggestions.filter(suggestion => 
           suggestion.toLowerCase().includes(lastTag) && 
           !currentTags.slice(0, -1).some(tag => tag.toLowerCase() === suggestion.toLowerCase())
         );
-
         if (matches.length > 0) {
           suggestionsDiv.innerHTML = matches.map(match => 
             `<div class="tag-suggestion">${match}</div>`
           ).join('');
           suggestionsDiv.style.display = 'block';
-
           suggestionsDiv.querySelectorAll('.tag-suggestion').forEach(suggestion => {
             suggestion.addEventListener('click', function() {
               const newTags = [...currentTags.slice(0, -1), this.textContent];
@@ -875,7 +859,6 @@
         suggestionsDiv.style.display = 'none';
       }
     });
-
     document.addEventListener('click', function(event) {
       if (!input.contains(event.target) && !suggestionsDiv.contains(event.target)) {
         suggestionsDiv.style.display = 'none';
@@ -885,7 +868,6 @@
 
   const sportSuggestions = ['Football', 'Cricket', 'Tennis', 'Basketball', 'Volleyball', 'Badminton', 'Table Tennis', 'Hockey', 'Rugby', 'Baseball'];
   const facilitySuggestions = ['Parking', 'Washroom', 'Lighting', 'Changing Room', 'Cafeteria', 'First Aid', 'Security', 'Sound System', 'Scoreboard', 'Seating'];
-
   setupTagSuggestions('tags_sport', 'sportSuggestions', sportSuggestions);
   setupTagSuggestions('tags_facilities', 'facilitySuggestions', facilitySuggestions);
   
@@ -910,17 +892,8 @@
   function setupFileUpload(inputId) {
     const input = document.getElementById(inputId);
     const area = input.closest('.form-group').querySelector('.file-upload-area');
-    
-    area.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      this.classList.add('dragover');
-    });
-
-    area.addEventListener('dragleave', function(e) {
-      e.preventDefault();
-      this.classList.remove('dragover');
-    });
-
+    area.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+    area.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('dragover'); });
     area.addEventListener('drop', function(e) {
       e.preventDefault();
       this.classList.remove('dragover');
@@ -928,22 +901,14 @@
       input.files = files;
       updateFileDisplay(input, area);
     });
-
-    input.addEventListener('change', function() {
-      updateFileDisplay(this, area);
-    });
+    input.addEventListener('change', function() { updateFileDisplay(this, area); });
   }
 
   function updateFileDisplay(input, area) {
     const files = input.files;
     const textDiv = area.querySelector('.file-upload-text');
-    
     if (files.length > 0) {
-      if (files.length === 1) {
-        textDiv.textContent = `Selected: ${files[0].name}`;
-      } else {
-        textDiv.textContent = `Selected: ${files.length} files`;
-      }
+      textDiv.textContent = files.length === 1 ? `Selected: ${files[0].name}` : `Selected: ${files.length} files`;
       area.style.borderColor = '#48bb78';
       area.style.backgroundColor = 'rgba(72, 187, 120, 0.05)';
     }
@@ -960,12 +925,10 @@
   async function refreshBookings(){
     const bookingsDiv = document.getElementById('bookings');
     bookingsDiv.classList.add('loading');
-    
     const list = await apiGet('/api/bookings/owner');
     const div = document.getElementById('bookings');
     div.innerHTML = '';
     div.classList.remove('loading');
-    
     (list || []).forEach(b => {
       const el = document.createElement('div');
       el.className = "booking-card";
@@ -973,27 +936,11 @@
       const statusClass = b.status.toLowerCase().replace(' ', '-');
       el.innerHTML = `
         <strong><i class="fas fa-futbol" style="margin-right: 0.5rem; color: #667eea;"></i>${b.ground.title}</strong>
-        <div style="margin: 0.5rem 0;">
-          <i class="fas fa-user" style="margin-right: 0.5rem; color: #4a5568;"></i>${b.user.name} — 
-          <i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${b.amount} 
-          <span class="status ${statusClass}">${b.status}</span>
-        </div>
-        <div style="margin: 0.5rem 0; color: #4a5568;">
-          <i class="fas fa-clock" style="margin-right: 0.5rem;"></i>
-          ${b.timeslot.from || '-'} to ${b.timeslot.to || '-'}
-        </div>
-        <div style="margin-top: 1rem;">
-          <button data-id="${b._id}" class="confirm">
-            <i class="fas fa-check" style="margin-right: 0.25rem;"></i>Confirm
-          </button>
-          <button data-id="${b._id}" class="reject">
-            <i class="fas fa-times" style="margin-right: 0.25rem;"></i>Reject
-          </button>
-        </div>
-      `;
+        <div style="margin: 0.5rem 0;"><i class="fas fa-user" style="margin-right: 0.5rem; color: #4a5568;"></i>${b.user.name} — <i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${b.amount} <span class="status ${statusClass}">${b.status}</span></div>
+        <div style="margin: 0.5rem 0; color: #4a5568;"><i class="fas fa-clock" style="margin-right: 0.5rem;"></i> ${b.timeslot.from || '-'} to ${b.timeslot.to || '-'}</div>
+        <div style="margin-top: 1rem;"><button data-id="${b._id}" class="confirm"><i class="fas fa-check" style="margin-right: 0.25rem;"></i>Confirm</button><button data-id="${b._id}" class="reject"><i class="fas fa-times" style="margin-right: 0.25rem;"></i>Reject</button></div>`;
       div.appendChild(el);
     });
-
     document.querySelectorAll('.confirm').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.booking-card');
@@ -1002,7 +949,6 @@
       alert('Confirmed');
       card.remove();
     }));
-
     document.querySelectorAll('.reject').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.booking-card');
@@ -1018,38 +964,29 @@
     const form = e.target;
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
-    
     const lat = document.getElementById('lat').value;
     const lng = document.getElementById('lng').value;
-    
     if (!lat || !lng) {
       alert('Please select a location on the map');
       return;
     }
-    
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Creating Venue...';
     submitBtn.disabled = true;
-    
     const fd = new FormData(form);
-
     const thumbnailChoice = document.querySelector('input[name="thumbnailChoice"]:checked').value;
     if (thumbnailChoice === 'url') {
       fd.delete('thumbnail');
       fd.append('thumbnailUrl', document.getElementById('thumbnailUrl').value);
     }
-
     const imagesChoice = document.querySelector('input[name="imagesChoice"]:checked').value;
     if (imagesChoice === 'url') {
       fd.delete('images');
       fd.append('imageUrls', document.getElementById('imageUrls').value);
     }
-    
     const r = await fetch('/api/grounds', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
     const j = await r.json();
-    
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
-    
     if(j._id) {
       alert('Venue created successfully!'); 
       form.reset();
@@ -1057,11 +994,7 @@
       document.getElementById('locationInfo').style.display = 'none';
       document.querySelectorAll('.file-upload-text').forEach(text => {
         const inputId = text.closest('.file-upload-area').querySelector('input').id;
-        if (inputId === 'thumbnail') {
-          text.textContent = 'Click to upload thumbnail';
-        } else {
-          text.textContent = 'Click to upload multiple images';
-        }
+        text.textContent = (inputId === 'thumbnail') ? 'Click to upload thumbnail' : 'Click to upload multiple images';
       });
       document.querySelectorAll('.file-upload-area').forEach(area => {
         area.style.borderColor = '#cbd5e0';
@@ -1077,47 +1010,31 @@
   async function refreshGrounds() {
     const groundsDiv = document.getElementById('grounds');
     groundsDiv.classList.add('loading');
-    
     const list = await apiGet('/api/grounds/owner');
     const div = document.getElementById('grounds');
     div.innerHTML = '';
     div.classList.remove('loading');
-
     (list || []).forEach(g => {
       const el = document.createElement('div');
       el.className = "ground-card";
       el.dataset.id = g._id;
-
       const statusClass = g.available ? 'available' : 'unavailable';
-
       el.innerHTML = `
         <strong><i class="fas fa-map-marked-alt" style="margin-right: 0.5rem; color: #667eea;"></i>${g.title}</strong>
-        <div style="margin: 0.5rem 0;">
-          <i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${g.price?.amount || 0}
-          <span class="status ${statusClass}">${g.available ? 'Available' : 'Unavailable'}</span>
-        </div>
+        <div style="margin: 0.5rem 0;"><i class="fas fa-rupee-sign" style="margin-right: 0.25rem; color: #38a169;"></i>${g.price?.amount || 0} <span class="status ${statusClass}">${g.available ? 'Available' : 'Unavailable'}</span></div>
         <div style="margin-top: 1rem;">
           ${g.available 
-            ? `<button data-id="${g._id}" class="make-unavail">
-                <i class="fas fa-eye-slash" style="margin-right: 0.25rem;"></i>Mark Unavailable
-               </button>` 
-            : `<button data-id="${g._id}" class="make-avail">
-                <i class="fas fa-redo" style="margin-right: 0.25rem;"></i>Re-list
-               </button>`
+            ? `<button data-id="${g._id}" class="make-unavail"><i class="fas fa-eye-slash" style="margin-right: 0.25rem;"></i>Mark Unavailable</button>` 
+            : `<button data-id="${g._id}" class="make-avail"><i class="fas fa-redo" style="margin-right: 0.25rem;"></i>Re-list</button>`
           }
-          <button data-id="${g._id}" class="delete-btn">
-            <i class="fas fa-trash-alt" style="margin-right: 0.25rem;"></i>Delete
-          </button>
-        </div>
-      `;
+          <button data-id="${g._id}" class="delete-btn"><i class="fas fa-trash-alt" style="margin-right: 0.25rem;"></i>Delete</button>
+        </div>`;
       div.appendChild(el);
     });
-
     document.querySelectorAll('.make-unavail').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.ground-card');
       card.classList.add('loading');
-      
       await fetch('/api/grounds/' + id, {
         method:'PATCH',
         headers: { 'Content-Type':'application/json','Authorization': 'Bearer ' + token },
@@ -1125,12 +1042,10 @@
       });
       refreshGrounds();
     }));
-
     document.querySelectorAll('.make-avail').forEach(btn => btn.addEventListener('click', async (ev)=>{
       const id = ev.target.getAttribute('data-id');
       const card = ev.target.closest('.ground-card');
       card.classList.add('loading');
-      
       await fetch('/api/grounds/' + id, {
         method:'PATCH',
         headers: { 'Content-Type':'application/json','Authorization': 'Bearer ' + token },
@@ -1138,27 +1053,21 @@
       });
       refreshGrounds();
     }));
-    
-    // NEW: Add event listeners for delete buttons
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', async (ev) => {
       const id = ev.target.closest('button').dataset.id;
       const card = ev.target.closest('.ground-card');
-      
       if (confirm('Are you sure you want to permanently delete this ground? This will also remove all associated bookings. This action cannot be undone.')) {
         card.classList.add('loading');
-        
         const response = await fetch('/api/grounds/' + id, {
           method: 'DELETE',
           headers: { 'Authorization': 'Bearer ' + token }
         });
-
         card.classList.remove('loading');
-
         if (response.ok) {
           alert('Ground deleted successfully.');
           card.style.transition = 'opacity 0.5s ease';
           card.style.opacity = '0';
-          setTimeout(() => card.remove(), 500); // Remove element after fade out
+          setTimeout(() => card.remove(), 500);
         } else {
           const error = await response.json();
           alert('Failed to delete ground: ' + (error.message || 'Server error'));

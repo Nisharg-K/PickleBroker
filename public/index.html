@@ -10,19 +10,27 @@
     .hidden { display: none !important; }
     .user-pill {
       display:inline-flex; gap:8px; align-items:center;
-      background:#0C0C1E; color:#F3E3E2; padding:6px 10px; border-radius:999px; font-weight:600;
+      background:#0C0C1E; color:#f3e3e23f; padding:6px 10px; border-radius:999px; font-weight:600;
     }
-    .user-pill .id-suffix { opacity:.85; font-size:12px; color:#dcdcdc; margin-left:6px }
+    .user-pill .id-suffix { opacity:.85; font-size:12px; color:#dcdcdc42; margin-left:6px }
     .booking-modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index:9999; padding:18px; }
-    .booking-modal-inner { width:100%; max-width:460px; background:#fff; border-radius:12px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
+    .booking-modal-inner { width:100%; max-width:460px; background:#ffffff25; border-radius:12px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
     .modal-close { float:right; border:0; background:transparent; font-size:20px; cursor:pointer }
     .modal-actions { display:flex; justify-content:center; gap:12px; margin-top:12px }
     .btn { padding:10px 14px; border-radius:8px; border:0; cursor:pointer }
-    .btn-primary { background:#4B0000; color:#fff }
-    .btn-ghost { background:transparent; border:1px solid #ddd; color:#333 }
+    .btn-primary { background:#4B0000; color:#ffffff3b }
+    .btn-ghost { background:transparent; border:1px solid #dddddd31; color:#333 }
     .topbar { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1B2E3C; color:#F3E3E2; border-radius:8px; margin:12px; }
     .brand { margin:0; font-size:20px }
     .nav-right { display:flex; align-items:center; gap:12px }
+
+    /* MODIFIED: Added style block to set a background image for this page only */
+    body {
+        background-image: linear-gradient(rgba(255, 255, 255, 0.199), rgba(255, 255, 255, 0.195)), url('pickleball.png');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed; /* Keeps the background stationary on scroll */
+    }
   </style>
 </head>
 <body>
